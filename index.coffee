@@ -178,6 +178,9 @@ class Atomicdb
   computeTotalSpaceTaken: ->
     return (@storageEngine.getItem @databaseIdentifier).length
 
+  getCollectionNameList: ->
+    return Object.keys(@definition)
+
 @Atomicdb = Atomicdb
 
 
