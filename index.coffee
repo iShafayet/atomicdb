@@ -109,6 +109,19 @@ class Atomicdb
 
     return doc[@uniqueKey]
 
+  find: (collectionName, filterFn = null)->
+    @_getDefinition collectionName
+    collection = @_getCollection collectionName
+
+    matchedDocList = []
+    for doc, index in collection.docList
+      if filterFn
+        unless filterFn doc
+          continue
+      matchedDocList.push @_deepCopy doc
+
+    return matchedDocList
+
 @Atomicdb = Atomicdb
 
 
