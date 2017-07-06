@@ -122,6 +122,33 @@ class Atomicdb
 
     return matchedDocList
 
+  update: (collectionName, selector, replacement)->
+    @_getDefinition collectionName
+    collection = @_getCollection collectionName
+
+    updatedCount = 0
+    for doc, index in collection.docList
+      if (typeof selector) is 'function'
+        unless selector doc
+          continue
+      else
+        unless doc[@uniqueKey] is selector
+          continue
+
+      if (typeof replacement) is 'function'
+        newDoc = replacement @_deepCopy doc
+      else
+        newDoc = @_deepCopy replacement
+      unless newDoc and typeof newDoc is 'object'
+        throw new Error "newDoc must be a non-null 'object'"
+
+      newDoc[@uniqueKey] = doc[@uniqueKey]
+
+      collection.docList.splice index, 1, newDoc
+      updatedCount += 1
+
+    return updatedCount
+
 @Atomicdb = Atomicdb
 
 
