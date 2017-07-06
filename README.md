@@ -46,6 +46,10 @@ options is a object containing the following keys -
 
 * `serializationEngine` A way to serialize object to string and back. JSON.stringify and JSON.parse is a good example. You can of course set your own. As long as it has the `stringify` and `parse` methods, you are golden.
 
+* `commitDelay` Guarantees that there will be at least `commitDelay` miliseconds delay between two subsequent commits. Useful if you have a big database or very frequent database changes. By default it is set to `'none'` which commits synchronously.
+
+* `uniqueKey` Every document in **atomicdb** has a unique identifier key that can not be altered by the user/developer. You can specify the name of the unique key. It defaults to `_id` as in mongodb.
+
 **Example:**
 ```coffee-script
 db = new Atomicdb {
