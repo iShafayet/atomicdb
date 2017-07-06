@@ -41,11 +41,10 @@ db = new Atomicdb
 **Example:**
 ```coffee-script
 db = new Atomicdb {
-    storageEngine: localStorage
-    encryptionEngine: null
-    compressionEngine: null
-    enableCompression: false
-    enableEncryption: false
-    commitDelay: 'none'
-  }
+  name: 'test-db'
+  storageEngine: localStorage
+  serializationEngine: JSON
+  commitDelay: 'none'
+  uniqueKey: '_id'
+}
 ```
