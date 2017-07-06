@@ -163,10 +163,17 @@ class Atomicdb
           continue
       indicesToRemove.push index
     
+    indicesToRemove.reverse()
     for indexToRemove, index in indicesToRemove
       collection.docList.splice indexToRemove, 1
 
     return indicesToRemove.length
+
+  upsert: (collectionName, selector, replacement, newDoc)->
+    updatedCount = @update collectionName, selector, replacement
+    if updatedCount > 0
+      return [ updatedCount ]
+    return [ 0, (@insert collectionName, newDoc) ]
 
 @Atomicdb = Atomicdb
 

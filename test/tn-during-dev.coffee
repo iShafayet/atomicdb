@@ -177,11 +177,70 @@ describe 'atomicdb', ->
       }
     ]
 
+    db.insert 'user', {
+      name: 'Charles'
+      age: 30
+    }
+
+    db.insert 'user', {
+      name: 'Charles'
+      age: 40
+    }
+
+    db.insert 'user', {
+      name: 'Charles'
+      age: 50
+    }
+
+    db.insert 'user', {
+      name: 'Charles'
+      age: 60
+    }
+
+    removedCount = db.remove 'user', (()-> true)
+
+    expect(removedCount).to.equal(5)
+
+    list = db.find 'user'
+
+    expect(list).to.deep.equal []
+
     id1 = db.insert 'user', {
       name: 'Charles'
       age: 30
     }
 
-    removedCount = db.remove 'user', (()-> true)
+    id2 = db.insert 'user', {
+      name: 'James'
+      age: 40
+    }
 
-    expect(removedCount).to.equal(2)
+    [ updatedCount, upsertedId ] = db.upsert 'user', (({_aid})-> false), ((doc)-> 
+      doc.iWillNeverBeCalled = true
+      return doc
+    ), {
+      name: 'Jill'
+      age: 60
+    }
+    
+    expect(updatedCount).to.equal(0)
+
+    list = db.find 'user'
+    
+    expect(list).to.deep.equal [
+      {
+        _aid: id1
+        name: 'Charles'
+        age: 30
+      },
+      {
+        _aid: id2
+        name: 'James'
+        age: 40
+      },
+      {
+        _aid: upsertedId
+        name: 'Jill'
+        age: 60
+      }
+    ]
