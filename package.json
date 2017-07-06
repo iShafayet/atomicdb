@@ -1,0 +1,36 @@
+{
+    "name": "atomicdb",
+    "version": "0.1.0",
+    "description": "A comprehensive database engine that works with arbitrary storage solutions and runs guaranteed atomic operations with additional support for encryption and compression",
+    "main": "index-runner.js",
+    "scripts": {
+        "test": "mocha --compilers coffee:coffee-script/register",
+        "dist-browser": "coffee scripts/dist.coffee"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iShafayet/atomicdb.git"
+    },
+    "keywords": [
+        "library",
+        "condition",
+        "pub/sub",
+        "events",
+        "async",
+        "utility"
+    ],
+    "author": "Sayem Shafayet <ishafayet@gmail.com> (http://ishafayet.me/)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/iShafayet/atomicdb/issues"
+    },
+    "homepage": "https://github.com/iShafayet/atomicdb",
+    "dependencies": {
+        "coffee-script": "^1.10.0"
+    },
+    "devDependencies": {
+        "chai": "^3.3.0",
+        "mocha": "^2.3.3"
+    },
+    "private": false
+}
