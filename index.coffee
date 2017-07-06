@@ -175,6 +175,9 @@ class Atomicdb
       return [ updatedCount ]
     return [ 0, (@insert collectionName, newDoc) ]
 
+  computeTotalSpaceTaken: ->
+    return (@storageEngine.getItem @databaseIdentifier).length
+
 @Atomicdb = Atomicdb
 
 
