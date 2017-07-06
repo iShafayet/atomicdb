@@ -149,6 +149,25 @@ class Atomicdb
 
     return updatedCount
 
+  remove: (collectionName, selector)->
+    @_getDefinition collectionName
+    collection = @_getCollection collectionName
+
+    indicesToRemove = []
+    for doc, index in collection.docList
+      if (typeof selector) is 'function'
+        unless selector doc
+          continue
+      else
+        unless doc[@uniqueKey] is selector
+          continue
+      indicesToRemove.push index
+    
+    for indexToRemove, index in indicesToRemove
+      collection.docList.splice indexToRemove, 1
+
+    return indicesToRemove.length
+
 @Atomicdb = Atomicdb
 
 

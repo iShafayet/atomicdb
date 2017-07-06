@@ -160,3 +160,28 @@ describe 'atomicdb', ->
         isCertified: true
       }
     ]
+
+    removedCount = db.remove 'user', id1
+
+    expect(removedCount).to.equal(1)
+
+    list = db.find 'user'
+
+    expect(list).to.deep.equal [
+      {
+        _aid: id2
+        name: 'Curl'
+        age: 50
+        isVerified: true
+        isCertified: true
+      }
+    ]
+
+    id1 = db.insert 'user', {
+      name: 'Charles'
+      age: 30
+    }
+
+    removedCount = db.remove 'user', (()-> true)
+
+    expect(removedCount).to.equal(2)
