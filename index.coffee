@@ -89,8 +89,15 @@ class Atomicdb
     @serializationEngine.parse @serializationEngine.stringify doc
 
   _notifyDatabaseChange: (type, argList...)->
-    ## TODO Factor in @options.commitDelay
-    @_saveDatabase()
+    if @commitDelay is 'none'
+      @_saveDatabase()
+    else
+      unless @alreadyCommitRequestPending
+        @alreadyCommitRequestPending = true
+        setTimeout (=> 
+          @_saveDatabase()
+          @alreadyCommitRequestPending = false
+        ), @commitDelay
 
   insert: (collectionName, doc)->
     unless doc and typeof doc is 'object'
