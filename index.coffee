@@ -70,6 +70,22 @@ class Atomicdb
       validatorFn
     }
 
+  _getDefinition: (collectionName)->
+    unless collectionName of @definition
+      throw new Error "Unknown collection '#{collectionName}'"
+    return @definition[collectionName]
+
+  _getCollection: (collectionName)->
+    unless collectionName of @database.collections
+      @database.collections[collectionName] = {
+        docList: []
+        serialSeed: 0
+        meta: {}
+      }
+    return @database.collections[collectionName]
+
+
+
 @Atomicdb = Atomicdb
 
 
