@@ -3,7 +3,7 @@ class Atomicdb
 
   @IdentifierPrefix = 'atomicdb-db-'
 
-  @UniqueDocumentKey = '_id'
+  @DefaultDocumentUniqueKey = '_id'
 
   constructor: (options = {})->
 
@@ -12,6 +12,7 @@ class Atomicdb
       @storageEngine
       @serializationEngine
       @commitDelay
+      @uniqueKey
     } = options
     unless (@name and typeof @name is 'string')
       throw new Error "Expected 'name' of database"
@@ -20,6 +21,7 @@ class Atomicdb
     unless @serializationEngine
       throw new Error "Expected 'serializationEngine'"
     @commitDelay or= 'none'
+    @uniqueKey or= @constructor.DefaultDocumentUniqueKey
 
     @databaseIdentifier = @constructor.IdentifierPrefix + @name
     @database = null
@@ -84,7 +86,29 @@ class Atomicdb
       }
     return @database.collections[collectionName]
 
+  _deepCopy: (doc)->
+    @serializationEngine.parse @serializationEngine.stringify doc
 
+  insert: (collectionName, doc)->
+    unless doc and typeof doc is 'object'
+      throw new Error "doc must be a non-null 'object'"
+
+    doc = @_deepCopy doc
+
+    collectionDefinition = @_getDefinition collectionName
+
+    if collectionDefinition.validatorFn
+      if (error = validatorFn doc)
+        throw error
+
+    collection = @_getCollection collectionName
+
+    doc[@uniqueKey] = collection.serialSeed
+    collection.serialSeed += 1
+
+    collection.docList.push doc
+
+    return doc[@uniqueKey]
 
 @Atomicdb = Atomicdb
 
