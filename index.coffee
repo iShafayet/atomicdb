@@ -58,6 +58,18 @@ class Atomicdb
     else
       return @_createNewDatabase()
 
+  defineCollection: (options)->
+    {
+      name
+      validatorFn
+    } = options
+    validatorFn or= null
+
+    @definition[name] = {
+      name
+      validatorFn
+    }
+
 @Atomicdb = Atomicdb
 
 
