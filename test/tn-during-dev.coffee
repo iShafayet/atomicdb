@@ -9,6 +9,7 @@ describe 'atomicdb', ->
 
     { LocalStorage } = require('node-localstorage')
     localStorage = new LocalStorage('./scratch.temp')  
+    localStorage.clear()
 
     db = new Atomicdb {
       name: 'test-db'

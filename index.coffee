@@ -88,6 +88,10 @@ class Atomicdb
   _deepCopy: (doc)->
     @serializationEngine.parse @serializationEngine.stringify doc
 
+  _notifyDatabaseChange: (type, argList...)->
+    ## TODO Factor in @options.commitDelay
+    @_saveDatabase()
+
   insert: (collectionName, doc)->
     unless doc and typeof doc is 'object'
       throw new Error "doc must be a non-null 'object'"
@@ -106,6 +110,7 @@ class Atomicdb
     collection.serialSeed += 1
 
     collection.docList.push doc
+    @_notifyDatabaseChange 'insert', collectionName, doc[@uniqueKey]
 
     return doc[@uniqueKey]
 
@@ -145,6 +150,7 @@ class Atomicdb
       newDoc[@uniqueKey] = doc[@uniqueKey]
 
       collection.docList.splice index, 1, newDoc
+      @_notifyDatabaseChange 'update', collectionName, newDoc[@uniqueKey]
       updatedCount += 1
 
     return updatedCount
@@ -166,6 +172,8 @@ class Atomicdb
     indicesToRemove.reverse()
     for indexToRemove, index in indicesToRemove
       collection.docList.splice indexToRemove, 1
+
+    @_notifyDatabaseChange 'remove', collectionName, indicesToRemove.length
 
     return indicesToRemove.length
 
