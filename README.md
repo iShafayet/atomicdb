@@ -38,7 +38,7 @@ db = new Atomicdb
 ## constructor
 `new Atomicdb options`
 
-options is a object containing the following keys - 
+`options` is a object containing the following keys - 
 
 * `name` A name for the database. Must be unique on your host/domain.
 
@@ -60,3 +60,4 @@ db = new Atomicdb {
   uniqueKey: '_id'
 }
 ```
+
