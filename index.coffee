@@ -51,7 +51,7 @@ class Atomicdb
     { removeExisting } = options
     removeExisting or= false
 
-    if @storageEngine.hasItem @databaseIdentifier
+    if @storageEngine.getItem @databaseIdentifier
       if removeExisting
         @removeExistingDatabase()
         return @_createNewDatabase()
@@ -82,7 +82,6 @@ class Atomicdb
       @database.collections[collectionName] = {
         docList: []
         serialSeed: 0
-        meta: {}
       }
     return @database.collections[collectionName]
 
