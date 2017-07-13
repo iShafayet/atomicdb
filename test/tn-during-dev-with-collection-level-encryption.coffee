@@ -46,12 +46,28 @@ describe 'atomicdb', ->
       shouldEncrypt: true
     }
 
+
+    db.defineCollection {
+      name: 'unencryptedUser'
+      shouldEncrypt: false
+    }
+
     id1 = db.insert 'user', {
       name: 'Charles'
       age: 30
     }
 
     id2 = db.insert 'user', {
+      name: 'Curl'
+      age: 50
+    }
+
+    id1a = db.insert 'unencryptedUser', {
+      name: 'Charles'
+      age: 30
+    }
+
+    id2a = db.insert 'unencryptedUser', {
       name: 'Curl'
       age: 50
     }
@@ -77,4 +93,24 @@ describe 'atomicdb', ->
       }
     ]
 
+    expect(db.database.collections.unencryptedUser).to.not.have.property('encryptedData')
+    expect(db.database.collections.unencryptedUser).to.have.property('docList')
+
+    list = db.find 'unencryptedUser'
+
+    expect(db.database.collections.unencryptedUser).to.not.have.property('encryptedData')
+    expect(db.database.collections.unencryptedUser).to.have.property('docList')
+
+    expect(list).to.deep.equal [
+      {
+        _aid: id1a
+        name: 'Charles'
+        age: 30
+      },
+      {
+        _aid: id2a
+        name: 'Curl'
+        age: 50
+      }
+    ]
     
