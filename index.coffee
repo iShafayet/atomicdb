@@ -35,6 +35,8 @@ class Atomicdb
     @database = null
     @definition = {}
 
+    @_lastTimeoutId = null
+
   _saveDatabase: ->
     @database.lastSavedDatetimeStamp = (new Date).getTime()
     rawContent = (@serializationEngine.stringify @database)
@@ -146,8 +148,9 @@ class Atomicdb
     else
       unless @alreadyCommitRequestPending
         @alreadyCommitRequestPending = true
-        setTimeout (=> 
+        @_lastTimeoutId = setTimeout (=> 
           @_saveDatabase()
+          @_lastTimeoutId = null
           @alreadyCommitRequestPending = false
         ), @commitDelay
 
@@ -250,6 +253,11 @@ class Atomicdb
 
   getCollectionNameList: ->
     return Object.keys(@definition)
+  
+  safelyCloseDatabase: ->
+    if @_lastTimeoutId isnt null
+      clearTimeout @_lastTimeoutId
+    @_saveDatabase()
 
 @Atomicdb = Atomicdb
 
