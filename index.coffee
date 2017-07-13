@@ -6,13 +6,14 @@ class Atomicdb
   @DefaultDocumentUniqueKey = '_id'
 
   constructor: (options = {})->
-
     {
       @name
       @storageEngine
       @serializationEngine
       @commitDelay
       @uniqueKey
+      encryption
+      @verbosity
     } = options
     unless (@name and typeof @name is 'string')
       throw new Error "Expected 'name' of database"
@@ -22,6 +23,13 @@ class Atomicdb
       throw new Error "Expected 'serializationEngine'"
     @commitDelay or= 'none'
     @uniqueKey or= @constructor.DefaultDocumentUniqueKey
+    encryption or= {}
+    { engine: @encryptionEngine, @shouldEncryptWholeDatabase } = encryption
+    @encryptionEngine or= null
+    @shouldEncryptWholeDatabase or= false
+    @verbosity or= 'error'
+    unless @verbosity in [ 'error', 'all', 'none' ]
+      throw new Error "Unexpected verbosity"
 
     @databaseIdentifier = @constructor.IdentifierPrefix + @name
     @database = null
@@ -29,7 +37,10 @@ class Atomicdb
 
   _saveDatabase: ->
     @database.lastSavedDatetimeStamp = (new Date).getTime()
-    @storageEngine.setItem @databaseIdentifier, (@serializationEngine.stringify @database)
+    rawContent = (@serializationEngine.stringify @database)
+    if @shouldEncryptWholeDatabase
+      rawContent = @encryptionEngine.encrypt rawContent
+    @storageEngine.setItem @databaseIdentifier, rawContent
 
   _createNewDatabase: ->
     @database = {} 
@@ -40,7 +51,23 @@ class Atomicdb
     @_saveDatabase()
 
   _loadExistingDatabase: ->
-    @database = @serializationEngine.parse @storageEngine.getItem @databaseIdentifier
+    rawContent = @storageEngine.getItem @databaseIdentifier
+    if @shouldEncryptWholeDatabase
+      try
+        rawContent = @encryptionEngine.decrypt rawContent
+      catch ex
+        error = new Error "Database corrupted. Was unable to decrypt using given encryption.engine."
+        if @verbosity in [ 'all', 'error' ]
+          if console.error then console.error ex else console.log ex
+        throw error
+    try
+      @database = @serializationEngine.parse rawContent
+    catch ex
+      error = new Error "Database corrupted. Was unable to parse using given serializationEngine."
+      if @verbosity in [ 'all', 'error' ]
+        if console.error then console.error ex else console.log ex
+      throw error
+      
     @_saveDatabase()
 
   removeExistingDatabase: ->
@@ -64,12 +91,15 @@ class Atomicdb
     {
       name
       validatorFn
+      shouldEncrypt
     } = options
     validatorFn or= null
+    shouldEncrypt or= false
 
     @definition[name] = {
       name
       validatorFn
+      shouldEncrypt
     }
 
   _getDefinition: (collectionName)->
@@ -77,18 +107,40 @@ class Atomicdb
       throw new Error "Unknown collection '#{collectionName}'"
     return @definition[collectionName]
 
+  _encryptCollectionInPlace: (collection)->
+    return unless collection.docList
+    rawContent = @serializationEngine.stringify collection.docList
+    collection.encryptedData = @encryptionEngine.encrypt rawContent
+    delete collection.docList
+    return undefined
+
+  _decryptCollectionInPlace: (collection)->
+    return unless collection.encryptedData
+    rawContent = @encryptionEngine.decrypt collection.encryptedData
+    collection.docList = @serializationEngine.parse rawContent
+    delete collection.encryptedData
+    return undefined
+
   _getCollection: (collectionName)->
+    collectionDefinition = @_getDefinition collectionName
     unless collectionName of @database.collections
       @database.collections[collectionName] = {
         docList: []
         serialSeed: 0
       }
+      if collectionDefinition.shouldEncrypt
+        @_encryptCollectionInPlace @database.collections[collectionName]
+    if collectionDefinition.shouldEncrypt
+      @_decryptCollectionInPlace @database.collections[collectionName]
     return @database.collections[collectionName]
 
   _deepCopy: (doc)->
     @serializationEngine.parse @serializationEngine.stringify doc
 
-  _notifyDatabaseChange: (type, argList...)->
+  _notifyDatabaseChange: (type, collectionName, argList...)->
+    collectionDefinition = @_getDefinition collectionName
+    if collectionDefinition.shouldEncrypt
+      @_encryptCollectionInPlace @_getCollection collectionName
     if @commitDelay is 'none'
       @_saveDatabase()
     else
@@ -122,7 +174,7 @@ class Atomicdb
     return doc[@uniqueKey]
 
   find: (collectionName, filterFn = null)->
-    @_getDefinition collectionName
+    collectionDefinition = @_getDefinition collectionName
     collection = @_getCollection collectionName
 
     matchedDocList = []
@@ -131,6 +183,9 @@ class Atomicdb
         unless filterFn doc
           continue
       matchedDocList.push @_deepCopy doc
+
+    if collectionDefinition.shouldEncrypt
+      @_encryptCollectionInPlace collection
 
     return matchedDocList
 
