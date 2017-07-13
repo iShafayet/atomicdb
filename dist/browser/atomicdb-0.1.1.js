@@ -10,10 +10,11 @@ window['atomicdb'] = {};
     Atomicdb.DefaultDocumentUniqueKey = '_id';
 
     function Atomicdb(options) {
+      var encryption, ref;
       if (options == null) {
         options = {};
       }
-      this.name = options.name, this.storageEngine = options.storageEngine, this.serializationEngine = options.serializationEngine, this.commitDelay = options.commitDelay, this.uniqueKey = options.uniqueKey;
+      this.name = options.name, this.storageEngine = options.storageEngine, this.serializationEngine = options.serializationEngine, this.commitDelay = options.commitDelay, this.uniqueKey = options.uniqueKey, encryption = options.encryption, this.verbosity = options.verbosity;
       if (!(this.name && typeof this.name === 'string')) {
         throw new Error("Expected 'name' of database");
       }
@@ -25,14 +26,28 @@ window['atomicdb'] = {};
       }
       this.commitDelay || (this.commitDelay = 'none');
       this.uniqueKey || (this.uniqueKey = this.constructor.DefaultDocumentUniqueKey);
+      encryption || (encryption = {});
+      this.encryptionEngine = encryption.engine, this.shouldEncryptWholeDatabase = encryption.shouldEncryptWholeDatabase;
+      this.encryptionEngine || (this.encryptionEngine = null);
+      this.shouldEncryptWholeDatabase || (this.shouldEncryptWholeDatabase = false);
+      this.verbosity || (this.verbosity = 'error');
+      if ((ref = this.verbosity) !== 'error' && ref !== 'all' && ref !== 'none') {
+        throw new Error("Unexpected verbosity");
+      }
       this.databaseIdentifier = this.constructor.IdentifierPrefix + this.name;
       this.database = null;
       this.definition = {};
+      this._lastTimeoutId = null;
     }
 
     Atomicdb.prototype._saveDatabase = function() {
+      var rawContent;
       this.database.lastSavedDatetimeStamp = (new Date).getTime();
-      return this.storageEngine.setItem(this.databaseIdentifier, this.serializationEngine.stringify(this.database));
+      rawContent = this.serializationEngine.stringify(this.database);
+      if (this.shouldEncryptWholeDatabase) {
+        rawContent = this.encryptionEngine.encrypt(rawContent);
+      }
+      return this.storageEngine.setItem(this.databaseIdentifier, rawContent);
     };
 
     Atomicdb.prototype._createNewDatabase = function() {
@@ -46,7 +61,38 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype._loadExistingDatabase = function() {
-      this.database = this.serializationEngine.parse(this.storageEngine.getItem(this.databaseIdentifier));
+      var error, ex, rawContent, ref, ref1;
+      rawContent = this.storageEngine.getItem(this.databaseIdentifier);
+      if (this.shouldEncryptWholeDatabase) {
+        try {
+          rawContent = this.encryptionEngine.decrypt(rawContent);
+        } catch (error1) {
+          ex = error1;
+          error = new Error("Database corrupted. Was unable to decrypt using given encryption.engine.");
+          if ((ref = this.verbosity) === 'all' || ref === 'error') {
+            if (console.error) {
+              console.error(ex);
+            } else {
+              console.log(ex);
+            }
+          }
+          throw error;
+        }
+      }
+      try {
+        this.database = this.serializationEngine.parse(rawContent);
+      } catch (error1) {
+        ex = error1;
+        error = new Error("Database corrupted. Was unable to parse using given serializationEngine.");
+        if ((ref1 = this.verbosity) === 'all' || ref1 === 'error') {
+          if (console.error) {
+            console.error(ex);
+          } else {
+            console.log(ex);
+          }
+        }
+        throw error;
+      }
       return this._saveDatabase();
     };
 
@@ -75,12 +121,14 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype.defineCollection = function(options) {
-      var name, validatorFn;
-      name = options.name, validatorFn = options.validatorFn;
+      var name, shouldEncrypt, validatorFn;
+      name = options.name, validatorFn = options.validatorFn, shouldEncrypt = options.shouldEncrypt;
       validatorFn || (validatorFn = null);
+      shouldEncrypt || (shouldEncrypt = false);
       return this.definition[name] = {
         name: name,
-        validatorFn: validatorFn
+        validatorFn: validatorFn,
+        shouldEncrypt: shouldEncrypt
       };
     };
 
@@ -91,12 +139,42 @@ window['atomicdb'] = {};
       return this.definition[collectionName];
     };
 
+    Atomicdb.prototype._encryptCollectionInPlace = function(collection) {
+      var rawContent;
+      if (!collection.docList) {
+        return;
+      }
+      rawContent = this.serializationEngine.stringify(collection.docList);
+      collection.encryptedData = this.encryptionEngine.encrypt(rawContent);
+      delete collection.docList;
+      return void 0;
+    };
+
+    Atomicdb.prototype._decryptCollectionInPlace = function(collection) {
+      var rawContent;
+      if (!collection.encryptedData) {
+        return;
+      }
+      rawContent = this.encryptionEngine.decrypt(collection.encryptedData);
+      collection.docList = this.serializationEngine.parse(rawContent);
+      delete collection.encryptedData;
+      return void 0;
+    };
+
     Atomicdb.prototype._getCollection = function(collectionName) {
+      var collectionDefinition;
+      collectionDefinition = this._getDefinition(collectionName);
       if (!(collectionName in this.database.collections)) {
         this.database.collections[collectionName] = {
           docList: [],
           serialSeed: 0
         };
+        if (collectionDefinition.shouldEncrypt) {
+          this._encryptCollectionInPlace(this.database.collections[collectionName]);
+        }
+      }
+      if (collectionDefinition.shouldEncrypt) {
+        this._decryptCollectionInPlace(this.database.collections[collectionName]);
       }
       return this.database.collections[collectionName];
     };
@@ -106,16 +184,21 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype._notifyDatabaseChange = function() {
-      var argList, type;
-      type = arguments[0], argList = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+      var argList, collectionDefinition, collectionName, type;
+      type = arguments[0], collectionName = arguments[1], argList = 3 <= arguments.length ? slice.call(arguments, 2) : [];
+      collectionDefinition = this._getDefinition(collectionName);
+      if (collectionDefinition.shouldEncrypt) {
+        this._encryptCollectionInPlace(this._getCollection(collectionName));
+      }
       if (this.commitDelay === 'none') {
         return this._saveDatabase();
       } else {
         if (!this.alreadyCommitRequestPending) {
           this.alreadyCommitRequestPending = true;
-          return setTimeout(((function(_this) {
+          return this._lastTimeoutId = setTimeout(((function(_this) {
             return function() {
               _this._saveDatabase();
+              _this._lastTimeoutId = null;
               return _this.alreadyCommitRequestPending = false;
             };
           })(this)), this.commitDelay);
@@ -144,11 +227,11 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype.find = function(collectionName, filterFn) {
-      var collection, doc, i, index, len, matchedDocList, ref;
+      var collection, collectionDefinition, doc, i, index, len, matchedDocList, ref;
       if (filterFn == null) {
         filterFn = null;
       }
-      this._getDefinition(collectionName);
+      collectionDefinition = this._getDefinition(collectionName);
       collection = this._getCollection(collectionName);
       matchedDocList = [];
       ref = collection.docList;
@@ -160,6 +243,9 @@ window['atomicdb'] = {};
           }
         }
         matchedDocList.push(this._deepCopy(doc));
+      }
+      if (collectionDefinition.shouldEncrypt) {
+        this._encryptCollectionInPlace(collection);
       }
       return matchedDocList;
     };
@@ -240,6 +326,13 @@ window['atomicdb'] = {};
 
     Atomicdb.prototype.getCollectionNameList = function() {
       return Object.keys(this.definition);
+    };
+
+    Atomicdb.prototype.safelyCloseDatabase = function() {
+      if (this._lastTimeoutId !== null) {
+        clearTimeout(this._lastTimeoutId);
+      }
+      return this._saveDatabase();
     };
 
     return Atomicdb;
