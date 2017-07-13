@@ -13,6 +13,8 @@ class Atomicdb
       @serializationEngine
       @commitDelay
       @uniqueKey
+      encryption
+      @verbosity
     } = options
     unless (@name and typeof @name is 'string')
       throw new Error "Expected 'name' of database"
@@ -22,6 +24,13 @@ class Atomicdb
       throw new Error "Expected 'serializationEngine'"
     @commitDelay or= 'none'
     @uniqueKey or= @constructor.DefaultDocumentUniqueKey
+    encryption or= {}
+    { engine: @encryptionEngine, @shouldEncryptWholeDatabase } = encryption
+    @encryptionEngine or= null
+    @shouldEncryptWholeDatabase or= false
+    @verbosity or= 'error'
+    unless @verbosity in [ 'error', 'all', 'none' ]
+      throw new Error "Unexpected verbosity"
 
     @databaseIdentifier = @constructor.IdentifierPrefix + @name
     @database = null
@@ -29,7 +38,10 @@ class Atomicdb
 
   _saveDatabase: ->
     @database.lastSavedDatetimeStamp = (new Date).getTime()
-    @storageEngine.setItem @databaseIdentifier, (@serializationEngine.stringify @database)
+    rawContent = (@serializationEngine.stringify @database)
+    if @shouldEncryptWholeDatabase
+      rawContent = @encryptionEngine.encrypt rawContent
+    @storageEngine.setItem @databaseIdentifier, rawContent
 
   _createNewDatabase: ->
     @database = {} 
@@ -40,7 +52,23 @@ class Atomicdb
     @_saveDatabase()
 
   _loadExistingDatabase: ->
-    @database = @serializationEngine.parse @storageEngine.getItem @databaseIdentifier
+    rawContent = @storageEngine.getItem @databaseIdentifier
+    if @shouldEncryptWholeDatabase
+      try
+        rawContent = @encryptionEngine.decrypt rawContent
+      catch ex
+        error = new Error "Database corrupted. Was unable to decrypt using given encryption.engine."
+        if @verbosity in [ 'all', 'error' ]
+          if console.error then console.error ex else console.log ex
+        throw error
+    try
+      @database = @serializationEngine.parse rawContent
+    catch ex
+      error = new Error "Database corrupted. Was unable to parse using given serializationEngine."
+      if @verbosity in [ 'all', 'error' ]
+        if console.error then console.error ex else console.log ex
+      throw error
+      
     @_saveDatabase()
 
   removeExistingDatabase: ->

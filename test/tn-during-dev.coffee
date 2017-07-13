@@ -5,7 +5,7 @@
 
 describe 'atomicdb', ->
 
-  it 'Generic', ->
+  it 'During Dev', ->
 
     { LocalStorage } = require('node-localstorage')
     localStorage = new LocalStorage('./scratch.temp')  
