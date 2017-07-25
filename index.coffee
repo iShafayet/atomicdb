@@ -36,6 +36,7 @@ class Atomicdb
     @definition = {}
 
     @_lastTimeoutId = null
+    @_collectionObserverMap = {}
 
   _saveDatabase: ->
     @database.lastSavedDatetimeStamp = (new Date).getTime()
@@ -143,6 +144,11 @@ class Atomicdb
     collectionDefinition = @_getDefinition collectionName
     if collectionDefinition.shouldEncrypt
       @_encryptCollectionInPlace @_getCollection collectionName
+
+    if collectionName of @_collectionObserverMap
+      for fn in @_collectionObserverMap[collectionName]
+        fn.apply null, [ type ].concat argList
+
     if @commitDelay is 'none'
       @_saveDatabase()
     else
@@ -158,6 +164,18 @@ class Atomicdb
     Object.defineProperty doc, '__atomic__', { enumerable: false, value: {}, configurable: true, writable: true }
     doc.__atomic__.createdDatetimeStamp = createdDatetimeStamp
     doc.__atomic__.lastModifiedDatetimeStamp = lastModifiedDatetimeStamp
+
+  observe: (collectionName, fn)->
+    unless collectionName of @_collectionObserverMap
+      @_collectionObserverMap[collectionName] = []
+    unless fn in @_collectionObserverMap[collectionName]
+      @_collectionObserverMap[collectionName].push fn
+
+  unobserve: (collectionName, fn)->
+    unless collectionName of @_collectionObserverMap
+      return
+    if (index = @_collectionObserverMap[collectionName].indexOf fn) > -1
+      @_collectionObserverMap[collectionName].splice index, 1
 
   insert: (collectionName, doc)->
     unless doc and typeof doc is 'object'
@@ -248,9 +266,8 @@ class Atomicdb
     indicesToRemove.reverse()
     for indexToRemove, index in indicesToRemove
       collection.docList.splice indexToRemove, 1
-
-    @_notifyDatabaseChange 'remove', collectionName, indicesToRemove.length
-
+      @_notifyDatabaseChange 'remove', collectionName, indexToRemove
+    
     return indicesToRemove.length
 
   upsert: (collectionName, selector, replacement, newDoc)->
