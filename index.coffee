@@ -154,6 +154,11 @@ class Atomicdb
           @alreadyCommitRequestPending = false
         ), @commitDelay
 
+  _setAtomicProperty: (doc, createdDatetimeStamp, lastModifiedDatetimeStamp)->
+    Object.defineProperty doc, '__atomic__', { enumerable: false, value: {}, configurable: true, writable: true }
+    doc.__atomic__.createdDatetimeStamp = createdDatetimeStamp
+    doc.__atomic__.lastModifiedDatetimeStamp = lastModifiedDatetimeStamp
+
   insert: (collectionName, doc)->
     unless doc and typeof doc is 'object'
       throw new Error "doc must be a non-null 'object'"
@@ -170,6 +175,9 @@ class Atomicdb
 
     doc[@uniqueKey] = collection.serialSeed
     collection.serialSeed += 1
+
+    datetimeStamp = (new Date).getTime()
+    @_setAtomicProperty doc, datetimeStamp, datetimeStamp
 
     collection.docList.push doc
     @_notifyDatabaseChange 'insert', collectionName, doc[@uniqueKey]
@@ -213,6 +221,9 @@ class Atomicdb
         throw new Error "newDoc must be a non-null 'object'"
 
       newDoc[@uniqueKey] = doc[@uniqueKey]
+
+      datetimeStamp = (new Date).getTime()
+      @_setAtomicProperty newDoc, doc.__atomic__.createdDatetimeStamp, datetimeStamp
 
       collection.docList.splice index, 1, newDoc
       @_notifyDatabaseChange 'update', collectionName, newDoc[@uniqueKey]
