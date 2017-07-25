@@ -2,7 +2,8 @@ window['atomicdb'] = {};
 
 (function() {
   var Atomicdb,
-    slice = [].slice;
+    slice = [].slice,
+    indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   Atomicdb = (function() {
     Atomicdb.IdentifierPrefix = 'atomicdb-db-';
@@ -38,6 +39,7 @@ window['atomicdb'] = {};
       this.database = null;
       this.definition = {};
       this._lastTimeoutId = null;
+      this._collectionObserverMap = {};
     }
 
     Atomicdb.prototype._saveDatabase = function() {
@@ -184,11 +186,18 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype._notifyDatabaseChange = function() {
-      var argList, collectionDefinition, collectionName, type;
+      var argList, collectionDefinition, collectionName, fn, i, len, ref, type;
       type = arguments[0], collectionName = arguments[1], argList = 3 <= arguments.length ? slice.call(arguments, 2) : [];
       collectionDefinition = this._getDefinition(collectionName);
       if (collectionDefinition.shouldEncrypt) {
         this._encryptCollectionInPlace(this._getCollection(collectionName));
+      }
+      if (collectionName in this._collectionObserverMap) {
+        ref = this._collectionObserverMap[collectionName];
+        for (i = 0, len = ref.length; i < len; i++) {
+          fn = ref[i];
+          fn.apply(null, [type].concat(argList));
+        }
       }
       if (this.commitDelay === 'none') {
         return this._saveDatabase();
@@ -206,8 +215,38 @@ window['atomicdb'] = {};
       }
     };
 
+    Atomicdb.prototype._setAtomicProperty = function(doc, createdDatetimeStamp, lastModifiedDatetimeStamp) {
+      Object.defineProperty(doc, '__atomic__', {
+        enumerable: false,
+        value: {},
+        configurable: true,
+        writable: true
+      });
+      doc.__atomic__.createdDatetimeStamp = createdDatetimeStamp;
+      return doc.__atomic__.lastModifiedDatetimeStamp = lastModifiedDatetimeStamp;
+    };
+
+    Atomicdb.prototype.observe = function(collectionName, fn) {
+      if (!(collectionName in this._collectionObserverMap)) {
+        this._collectionObserverMap[collectionName] = [];
+      }
+      if (indexOf.call(this._collectionObserverMap[collectionName], fn) < 0) {
+        return this._collectionObserverMap[collectionName].push(fn);
+      }
+    };
+
+    Atomicdb.prototype.unobserve = function(collectionName, fn) {
+      var index;
+      if (!(collectionName in this._collectionObserverMap)) {
+        return;
+      }
+      if ((index = this._collectionObserverMap[collectionName].indexOf(fn)) > -1) {
+        return this._collectionObserverMap[collectionName].splice(index, 1);
+      }
+    };
+
     Atomicdb.prototype.insert = function(collectionName, doc) {
-      var collection, collectionDefinition, error;
+      var collection, collectionDefinition, datetimeStamp, error;
       if (!(doc && typeof doc === 'object')) {
         throw new Error("doc must be a non-null 'object'");
       }
@@ -221,6 +260,8 @@ window['atomicdb'] = {};
       collection = this._getCollection(collectionName);
       doc[this.uniqueKey] = collection.serialSeed;
       collection.serialSeed += 1;
+      datetimeStamp = (new Date).getTime();
+      this._setAtomicProperty(doc, datetimeStamp, datetimeStamp);
       collection.docList.push(doc);
       this._notifyDatabaseChange('insert', collectionName, doc[this.uniqueKey]);
       return doc[this.uniqueKey];
@@ -251,7 +292,7 @@ window['atomicdb'] = {};
     };
 
     Atomicdb.prototype.update = function(collectionName, selector, replacement) {
-      var collection, doc, i, index, len, newDoc, ref, updatedCount;
+      var collection, datetimeStamp, doc, i, index, len, newDoc, ref, updatedCount;
       this._getDefinition(collectionName);
       collection = this._getCollection(collectionName);
       updatedCount = 0;
@@ -276,6 +317,8 @@ window['atomicdb'] = {};
           throw new Error("newDoc must be a non-null 'object'");
         }
         newDoc[this.uniqueKey] = doc[this.uniqueKey];
+        datetimeStamp = (new Date).getTime();
+        this._setAtomicProperty(newDoc, doc.__atomic__.createdDatetimeStamp, datetimeStamp);
         collection.docList.splice(index, 1, newDoc);
         this._notifyDatabaseChange('update', collectionName, newDoc[this.uniqueKey]);
         updatedCount += 1;
@@ -306,8 +349,8 @@ window['atomicdb'] = {};
       for (index = j = 0, len1 = indicesToRemove.length; j < len1; index = ++j) {
         indexToRemove = indicesToRemove[index];
         collection.docList.splice(indexToRemove, 1);
+        this._notifyDatabaseChange('remove', collectionName, indexToRemove);
       }
-      this._notifyDatabaseChange('remove', collectionName, indicesToRemove.length);
       return indicesToRemove.length;
     };
 
