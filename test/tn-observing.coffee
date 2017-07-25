@@ -27,8 +27,10 @@ describe 'atomicdb', ->
 
     observedStringList = []
 
-    db.observe 'user', (action, id, args...)->
+    fn = (action, id, args...)->
       observedStringList.push [ action, id ]
+
+    db.observe 'user', fn
 
     id1 = db.insert 'user', {
       name: 'Charles'
@@ -48,6 +50,12 @@ describe 'atomicdb', ->
 
     db.remove 'user', (({name})-> name is 'Curl')
 
+    db.unobserve 'user', fn
+
+    id2 = db.insert 'user', {
+      name: 'Hurl'
+      age: 50
+    }
 
     expect(observedStringList).to.deep.equal [ 
       [ 'insert', 0 ],
