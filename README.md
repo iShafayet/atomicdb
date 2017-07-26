@@ -57,9 +57,9 @@ db = new Atomicdb
 
 * `encryption`: **atomicdb** allows you to use an encryption engine of your choosing. It applies absolutely no restriction to your choice of algorithm and such. The encryption property takes an object with two mandatory properies. `engine` and `shouldEncryptWholeDatabase`
 
-1. `engine`. similar to `serializationEngine` you can use any library as long as it implements two methods, `encrypt(text)` and `decrypt(text)`. [Click here] to learn more about creating your custom encryption engine.
+    1. `engine`. similar to `serializationEngine` you can use any library as long as it implements two methods, `encrypt(text)` and `decrypt(text)`. [Click here] to learn more about creating your custom encryption engine.
 
-2. `shouldEncryptWholeDatabase`. Set it to true if you want the entire database to be encrypted every time it commits to the storage. Should be avoided for large projects. Useful if you do not want the names of your collections to be known from outside.
+    2. `shouldEncryptWholeDatabase`. Set it to true if you want the entire database to be encrypted every time it commits to the storage. Should be avoided for large projects. Useful if you do not want the names of your collections to be known from outside.
 
 * `commitDelay`: Guarantees that there will be at least `commitDelay` miliseconds delay between two subsequent commits. Useful if you have a big database or very frequent database changes. By default it is set to `'none'` which commits synchronously.
 
