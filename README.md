@@ -30,6 +30,15 @@ db = new Atomicdb
 ```
 <!-- Browser Area End -->
 
+# Usage (Browser)
+```coffee-script
+{
+  Atomicdb
+} = window.atomicdb
+
+db = new Atomicdb
+```
+
 # Features
 
 * [constructor `new Atomicdb`](#constructor) (Create a new Instance)
