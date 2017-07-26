@@ -42,7 +42,7 @@ db = new Atomicdb
 # Documentation
 
 * [`new Atomicdb`](#constructor) (Create a new Instance)
-* [Atomicdb#initializeDatabase](#initializeDatabase)
+* [Atomicdb#initializeDatabase](#initializedatabase)
 * [Atomicdb#defineCollection](#defineCollection)
 
 
