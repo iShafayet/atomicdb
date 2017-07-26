@@ -41,7 +41,9 @@ db = new Atomicdb
 
 # Documentation
 
-* [constructor `new Atomicdb`](#constructor) (Create a new Instance)
+* [`new Atomicdb`](#constructor) (Create a new Instance)
+* [Atomicdb#initializeDatabase](#initializeDatabase)
+* [Atomicdb#defineCollection](#defineCollection)
 
 
 ## constructor
@@ -55,7 +57,7 @@ db = new Atomicdb
 
 * `serializationEngine`: A way to serialize object to string and back. JSON.stringify and JSON.parse is a good example. You can of course set your own. As long as it has the `stringify` and `parse` methods, you are golden.
 
-* `encryption`: **atomicdb** allows you to use an encryption engine of your choosing. It applies absolutely no restriction to your choice of algorithm and such. The encryption property takes an object with two mandatory properies. `engine` and `shouldEncryptWholeDatabase`
+* `encryption`: **atomicdb** allows you to use an encryption engine of your choosing. If you ommit this property, no encryption will be used. It applies absolutely no restriction to your choice of algorithm and such. The encryption property takes an object with two mandatory properies. `engine` and `shouldEncryptWholeDatabase`
 
     1. `engine`. similar to `serializationEngine` you can use any library as long as it implements two methods, `encrypt(text)` and `decrypt(text)`. [Click here] to learn more about creating your custom encryption engine.
 
@@ -79,3 +81,19 @@ db = new Atomicdb {
 }
 ```
 
+## defineCollection
+`db.defineCollection options`
+
+`options` is an object containing the following keys - 
+
+* `name`: A name for the collection. Must be unique on your database. (i.e. "user", "articles" etc..)
+
+* `shouldEncrypt`: If set to `true`, the data in the collection will be encrypted if an encryption engine is provided during constructor call. Defaults to `false`.
+
+
+## initializeDatabase
+`db.initializeDatabase options`
+
+`options` is an optional object containing the following keys - 
+
+* `removeExisting`: If set to `true`, any existing database will be wiped clean. Defaults to `false`
