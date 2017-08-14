@@ -217,7 +217,7 @@ window['atomicdb'] = {};
 
     Atomicdb.prototype._setAtomicProperty = function(doc, createdDatetimeStamp, lastModifiedDatetimeStamp) {
       Object.defineProperty(doc, '__atomic__', {
-        enumerable: false,
+        enumerable: true,
         value: {},
         configurable: true,
         writable: true

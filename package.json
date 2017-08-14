@@ -1,6 +1,6 @@
 {
     "name": "atomicdb",
-    "version": "0.1.2",
+    "version": "0.1.5",
     "description": "A comprehensive database engine that works with arbitrary storage solutions and runs guaranteed atomic operations with additional support for encryption and compression",
     "main": "index-runner.js",
     "scripts": {
@@ -12,12 +12,12 @@
         "url": "https://github.com/iShafayet/atomicdb.git"
     },
     "keywords": [
-        "library",
-        "condition",
-        "pub/sub",
-        "events",
-        "async",
-        "utility"
+        "database",
+        "atomic",
+        "sync",
+        "observe",
+        "query",
+        "upsert"
     ],
     "author": "Sayem Shafayet <ishafayet@gmail.com> (http://ishafayet.me/)",
     "license": "MIT",
