@@ -23,10 +23,10 @@ db = new Atomicdb
 <!-- Browser Area Start -->
 # Installation (Browser)
 
-[Download the latest build](https://github.com/iShafayet/atomicdb/blob/master/dist/browser/atomicdb-0.1.5.js) and put it in your application.
+[Download the latest build](https://github.com/iShafayet/atomicdb/blob/master/dist/browser/atomicdb-0.1.8.js) and put it in your application.
 
 ```html
-<script type="text/javascript" src="atomicdb-0.1.5.js"></script>
+<script type="text/javascript" src="atomicdb-0.1.8.js"></script>
 ```
 <!-- Browser Area End -->
 
