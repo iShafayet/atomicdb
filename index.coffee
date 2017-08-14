@@ -161,7 +161,7 @@ class Atomicdb
         ), @commitDelay
 
   _setAtomicProperty: (doc, createdDatetimeStamp, lastModifiedDatetimeStamp)->
-    Object.defineProperty doc, '__atomic__', { enumerable: false, value: {}, configurable: true, writable: true }
+    Object.defineProperty doc, '__atomic__', { enumerable: true, value: {}, configurable: true, writable: true }
     doc.__atomic__.createdDatetimeStamp = createdDatetimeStamp
     doc.__atomic__.lastModifiedDatetimeStamp = lastModifiedDatetimeStamp
 
