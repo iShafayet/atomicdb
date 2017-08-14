@@ -1,0 +1,24 @@
+{
+  "name": "atomicdb",
+  "description": "A comprehensive database engine that works with arbitrary storage solutions and runs guaranteed atomic operations with additional support for encryption and compression",
+  "main": "atomicdb.html",
+  "authors": [
+    "Sayem Shafayet <ishafayet@gmail.com> (http://ishafayet.me/)"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "database",
+    "atomic",
+    "sync",
+    "observe",
+    "query",
+    "upsert"
+  ],
+  "homepage": "https://github.com/iShafayet/atomicdb",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test"
+  ]
+}
