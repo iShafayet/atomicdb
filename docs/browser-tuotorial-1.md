@@ -63,12 +63,12 @@ The `insert` method returns the id of the doc you just inserted, in case you nee
 Let's insert the rest.
 
 ```js
-db.insert('user', {
+db.insert('contact', {
   name: "Blake",
   age: 32,
   phone: "555 232 1231"
 });
-db.insert('user', {
+db.insert('contact', {
   name: "Tyler",
   age: 22,
   phone: "544 533 5425"
@@ -78,7 +78,7 @@ db.insert('user', {
 We could also use the `insertMany` method to insert multiple documents at the same time.
 
 ```js
-db.insertMany('user', [
+db.insertMany('contact', [
   {
     name: "Blake",
     age: 32,
@@ -115,7 +115,7 @@ db.defineCollection({
 db.initializeDatabase();
 
 // Insert our data
-db.insertMany('user', [
+db.insertMany('contact', [
   {
     name: "James",
     age: 26,
@@ -136,4 +136,4 @@ db.insertMany('user', [
 
 # Continue
 
-[Continue to the next part](browser-tuotorial-2.md)
+[Continue to the next part](browser-tuotorial-2.md) where we'll handle querying and updates.
