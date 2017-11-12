@@ -1,7 +1,7 @@
 # atomicdb
 A comprehensive database engine that works with arbitrary storage solutions (on brower and nodejs) and runs guaranteed atomic operations with additional support for encryption and compression. 
 
-It is fully documented and comes with a tutorial for the browser.
+It has an extremely gentle learning curve. It is fully documented and comes with a tutorial for the browser.
 
 [![NPM](https://nodei.co/npm/atomicdb.png?compact=true)](https://npmjs.org/package/atomicdb)
 
