@@ -1,5 +1,5 @@
 
-# atomicdb browser tutorial (Part 2/3)
+# atomicdb browser tutorial (Part 2/4)
 
 Previously, we created a database and inserted the following data into it.
 
@@ -114,7 +114,7 @@ let updatedCount = db.update('contact', ({ name }) => name === "James", (contact
   contact.phone = "555 343 6568";
   return contact;
 });
-if (updatedCount){
+if (updatedCount > 0){
   console.log("Jame's new contact number has been saved");
 }
 ``` 
