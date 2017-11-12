@@ -13,20 +13,9 @@ It is fully documented and comes with a tutorial for the browser.
 
 [API Reference](docs/api-index.md)
 
-[Testing](#Testing)
+[Testing](#testing)
 
 # Installation 
-
-## NodeJS
-
-```
-npm install atomicdb --save
-```
-
-```js
-const { Atomicdb } = require('atomicdb');
-let db = new Atomicdb();
-```
 
 ## Browser
 
@@ -56,4 +45,27 @@ Or, in ES5
 var db = new window.atomicdb.Atomicdb();
 ```
 
+## NodeJS
 
+```
+npm install atomicdb --save
+```
+
+```js
+const { Atomicdb } = require('atomicdb');
+let db = new Atomicdb();
+```
+
+# Testing 
+
+Unit tests are written using [mocha](https://mochajs.org/). Install it globally.
+
+```sh
+npm install mocha -g
+```
+
+Then run -
+
+```sh
+npm test.
+```
